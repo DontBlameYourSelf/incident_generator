@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Report Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, rgba(20, 20, 30, 0.9) 0%, rgba(10, 10, 20, 0.9) 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            font-size: 2.8em;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #ee5a6f, #ff6b6b);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 3s ease infinite;
+        }
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .subtitle { font-size: 1.1em; color: #888; letter-spacing: 1px; }
+        .form-container {
+            background: linear-gradient(135deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 30, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        .form-section { margin-bottom: 35px; }
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 400;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 107, 107, 0.3);
+            letter-spacing: 1px;
+        }
+        .form-group { margin-bottom: 25px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+            font-size: 0.95em;
+            letter-spacing: 0.5px;
+        }
+        input[type="text"], input[type="email"], input[type="date"], input[type="time"], select, textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(20, 20, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 1em;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.2);
+        }
+        textarea { min-height: 120px; resize: vertical; }
+        select { cursor: pointer; }
+        .severity-select {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .severity-option {
+            padding: 15px;
+            background: rgba(30, 30, 40, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .severity-option:hover { transform: translateY(-3px); }
+        .severity-option.selected {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+        .severity-option input { display: none; }
+        .severity-label { display: block; font-weight: 500; letter-spacing: 0.5px; }
+        .btn-container { display: flex; gap: 20px; margin-top: 40px; }
+        .btn {
+            flex: 1;
+            padding: 18px 35px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.4);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, rgba(80, 80, 90, 0.8) 0%, rgba(60, 60, 70, 0.8) 100%);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 40px;
+        }
+        @media (max-width: 768px) {
+            .form-container { padding: 25px; }
+            h1 { font-size: 2em; }
+            .btn-container { flex-direction: column; }
+            .severity-select { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>INCIDENT REPORT GENERATOR</h1>
+            <p class="subtitle">Automated Security Incident Documentation</p>
+        </div>
+
+        <div class="form-container">
+            <form id="incidentForm">
+                <div class="form-section">
+                    <h2 class="section-title">📋 Basic Information</h2>
+                    <div class="form-group">
+                        <label for="incidentType">Incident Type *</label>
+                        <select id="incidentType" required>
+                            <option value="">Select Incident Type</option>
+                            <option value="Malware Infection">Malware Infection</option>
+                            <option value="Phishing Attack">Phishing Attack</option>
+                            <option value="Ransomware Attack">Ransomware Attack</option>
+                            <option value="Data Breach">Data Breach</option>
+                            <option value="DDoS Attack">DDoS Attack</option>
+                            <option value="Unauthorized Access">Unauthorized Access</option>
+                            <option value="Insider Threat">Insider Threat</option>
+                            <option value="Social Engineering">Social Engineering</option>
+                            <option value="Vulnerability Exploitation">Vulnerability Exploitation</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="incidentId">Incident ID *</label>
+                        <input type="text" id="incidentId" placeholder="e.g., INC-2024-001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="incidentDate">Incident Date *</label>
+                        <input type="date" id="incidentDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="incidentTime">Incident Time *</label>
+                        <input type="time" id="incidentTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Severity Level *</label>
+                        <div class="severity-select">
+                            <div class="severity-option">
+                                <input type="radio" name="severity" value="Low" id="severityLow" required>
+                                <label for="severityLow" class="severity-label">🟢 Low</label>
+                            </div>
+                            <div class="severity-option">
+                                <input type="radio" name="severity" value="Medium" id="severityMedium">
+                                <label for="severityMedium" class="severity-label">🟡 Medium</label>
+                            </div>
+                            <div class="severity-option">
+                                <input type="radio" name="severity" value="High" id="severityHigh">
+                                <label for="severityHigh" class="severity-label">🟠 High</label>
+                            </div>
+                            <div class="severity-option">
+                                <input type="radio" name="severity" value="Critical" id="severityCritical">
+                                <label for="severityCritical" class="severity-label">🔴 Critical</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">👤 Reporter Information</h2>
+                    <div class="form-group">
+                        <label for="reporterName">Reporter Name *</label>
+                        <input type="text" id="reporterName" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reporterEmail">Reporter Email *</label>
+                        <input type="email" id="reporterEmail" placeholder="john.doe@company.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reporterDepartment">Department *</label>
+                        <input type="text" id="reporterDepartment" placeholder="IT Security" required>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">🔍 Incident Details</h2>
+                    <div class="form-group">
+                        <label for="affectedSystems">Affected Systems *</label>
+                        <textarea id="affectedSystems" placeholder="List all affected systems, servers, or devices..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="incidentDescription">Incident Description *</label>
+                        <textarea id="incidentDescription" placeholder="Provide a detailed description of the incident..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="initialObservation">Initial Observation *</label>
+                        <textarea id="initialObservation" placeholder="Describe what was first noticed or detected..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="impactAssessment">Impact Assessment *</label>
+                        <textarea id="impactAssessment" placeholder="Describe the business impact and affected users/data..." required></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">⚡ Response Actions</h2>
+                    <div class="form-group">
+                        <label for="immediateActions">Immediate Actions Taken *</label>
+                        <textarea id="immediateActions" placeholder="List all immediate containment actions..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="investigationFindings">Investigation Findings</label>
+                        <textarea id="investigationFindings" placeholder="Summarize investigation results and root cause..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="remediation">Remediation Steps</label>
+                        <textarea id="remediation" placeholder="List all remediation and recovery actions..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="recommendations">Recommendations</label>
+                        <textarea id="recommendations" placeholder="Provide recommendations to prevent similar incidents..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">📌 Additional Information</h2>
+                    <div class="form-group">
+                        <label for="incidentStatus">Incident Status *</label>
+                        <select id="incidentStatus" required>
+                            <option value="">Select Status</option>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Contained">Contained</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="additionalNotes">Additional Notes</label>
+                        <textarea id="additionalNotes" placeholder="Any additional information or comments..."></textarea>
+                    </div>
+                </div>
+
+                <div class="btn-container">
+                    <button type="submit" class="btn">📥 Generate PDF Report</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="footer">
+            <p>© 2024 Incident Report Generator | Confidential Security Document</p>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.severity-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                document.querySelectorAll('.severity-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+
+        document.getElementById('incidentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            generatePDF();
+        });
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const data = {
+                type: document.getElementById('incidentType').value,
+                id: document.getElementById('incidentId').value,
+                date: document.getElementById('incidentDate').value,
+                time: document.getElementById('incidentTime').value,
+                severity: document.querySelector('input[name="severity"]:checked').value,
+                reporterName: document.getElementById('reporterName').value,
+                reporterEmail: document.getElementById('reporterEmail').value,
+                reporterDept: document.getElementById('reporterDepartment').value,
+                systems: document.getElementById('affectedSystems').value,
+                description: document.getElementById('incidentDescription').value,
+                observation: document.getElementById('initialObservation').value,
+                impact: document.getElementById('impactAssessment').value,
+                actions: document.getElementById('immediateActions').value,
+                findings: document.getElementById('investigationFindings').value,
+                remediation: document.getElementById('remediation').value,
+                recommendations: document.getElementById('recommendations').value,
+                status: document.getElementById('incidentStatus').value,
+                notes: document.getElementById('additionalNotes').value
+            };
+
+            let y = 20;
+            const lh = 7;
+            const m = 20;
+            const w = 170;
+
+            doc.setFontSize(20);
+            doc.setTextColor(255, 107, 107);
+            doc.text('SECURITY INCIDENT REPORT', 105, y, { align: 'center' });
+            y += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text('Confidential Document', 105, y, { align: 'center' });
+            y += 15;
+
+            doc.setFontSize(14);
+            doc.setTextColor(255, 107, 107);
+            doc.text('Basic Information', m, y);
+            y += 8;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            doc.text(`Incident ID: ${data.id}`, m, y); y += lh;
+            doc.text(`Type: ${data.type}`, m, y); y += lh;
+            doc.text(`Date/Time: ${data.date} ${data.time}`, m, y); y += lh;
+            doc.text(`Severity: ${data.severity}`, m, y); y += lh;
+            doc.text(`Status: ${data.status}`, m, y); y += 12;
+
+            doc.setFontSize(14);
+            doc.setTextColor(255, 107, 107);
+            doc.text('Reporter Information', m, y); y += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            doc.text(`Name: ${data.reporterName}`, m, y); y += lh;
+            doc.text(`Email: ${data.reporterEmail}`, m, y); y += lh;
+            doc.text(`Department: ${data.reporterDept}`, m, y); y += 12;
+
+            if (y > 240) { doc.addPage(); y = 20; }
+
+            doc.setFontSize(14);
+            doc.setTextColor(255, 107, 107);
+            doc.text('Incident Details', m, y); y += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            
+            y = addText(doc, 'Affected Systems:', data.systems, m, y, w);
+            y = addText(doc, 'Description:', data.description, m, y, w);
+            y = addText(doc, 'Initial Observation:', data.observation, m, y, w);
+            y = addText(doc, 'Impact:', data.impact, m, y, w);
+
+            if (y > 240) { doc.addPage(); y = 20; }
+
+            doc.setFontSize(14);
+            doc.setTextColor(255, 107, 107);
+            doc.text('Response Actions', m, y); y += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            
+            y = addText(doc, 'Immediate Actions:', data.actions, m, y, w);
+            if (data.findings) y = addText(doc, 'Findings:', data.findings, m, y, w);
+            if (data.remediation) y = addText(doc, 'Remediation:', data.remediation, m, y, w);
+            if (data.recommendations) y = addText(doc, 'Recommendations:', data.recommendations, m, y, w);
+            if (data.notes) y = addText(doc, 'Notes:', data.notes, m, y, w);
+
+            doc.save(`Incident_Report_${data.id}.pdf`);
+            alert('PDF generated successfully!');
+        }
+
+        function addText(doc, label, text, x, y, width) {
+            doc.setFont(undefined, 'bold');
+            doc.text(label, x, y);
+            y += 6;
+            doc.setFont(undefined, 'normal');
+            const lines = doc.splitTextToSize(text, width);
+            lines.forEach(line => {
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.text(line, x, y);
+                y += 5;
+            });
+            return y + 8;
+        }
+    </script>
+</body>
+</html>
